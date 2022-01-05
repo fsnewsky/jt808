@@ -24,7 +24,7 @@ def b_to_a(msg):
     return rst
 
 class Message(object): 
-    flagBit =  struct.pack('>B',0x7e)
+    flagBit =struct.pack('>B' , 0x7e)
     termPhone=''
     commandId = None
     fenbaoLen = 1000 #最大值1023
