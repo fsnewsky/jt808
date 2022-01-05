@@ -8,7 +8,7 @@ from twisted.internet.protocol import Protocol, ClientFactory, Factory
 from twisted.internet import defer, reactor
 from twisted.internet.threads import deferToThread
 from collections import namedtuple
-import Queue, threading, time, datetime
+import queue, threading, time, datetime
 import redis
 
 from enum import Enum
@@ -16,7 +16,7 @@ from jt808protocol import *
 from jt808error import *
 
 REDISHOST='127.0.0.1'
-REDISHOST='222.169.228.116'
+#REDISHOST='222.169.228.116'
 
 JT808SessionStates = Enum('NONE','OPEN',)
 
@@ -53,7 +53,7 @@ class RedisQueue(object):
         if block:  
             item = self.__db.blpop(self.key, timeout=timeout)  
         else:  
-            item = self.__db.lrpop(elf.key)  
+            item = self.__db.lrpop(self.key)
   
         if item:  
             item = item[1]  
@@ -157,7 +157,7 @@ class JT808(Protocol):
         msg = None
         try:
             msg = Message.parseBuild(data)
-        except MSGCorruptError, e:
+        except MSGCorruptError as e:
             self.log.exception(e)
             self.log.critical("Received corrupt MSG %s" % binascii.b2a_hex(data))
             self.corruptDataRecvd()
@@ -191,7 +191,7 @@ class JT808(Protocol):
             getattr(self, "onMSGRequest_%s" % type(reqmsg).__name__)(reqmsg)
             return
         if self.dataRequestHandler is None:
-            return self.fatalErrorOnRequest(datamsg, 'Missing dataRequestHandler')
+            return self.fatalErrorOnRequest(self.datamsg, 'Missing dataRequestHandler')
         
         self.doMSGRequest(reqmsg, self.dataRequestHandler)
 
@@ -318,7 +318,8 @@ class JT808(Protocol):
     def endOutboundTransaction(self, respmsg):
         txn = self.closeOutboundTransaction(respmsg.seqNum)
         if not isinstance(respmsg, txn.request.requireAck):
-            txn.ackDeferred.errback(SMPPProtocolError("Invalid MSG response type [%s] returned for request type [%s]" % (type(respmsg), type(txn.request))))
+            #txn.ackDeferred.errback(SMPPProtocolError("Invalid MSG response type [%s] returned for request type [%s]" % (type(respmsg), type(txn.request))))
+            txn.ackDeferred.errback(print("Invalid MSG response type [%s] returned for request type [%s]" % (type(respmsg), type(txn.request))))
             return
 
         txn.ackDeferred.callback(JT808OutboundTxnResult(self, txn.request, respmsg))
